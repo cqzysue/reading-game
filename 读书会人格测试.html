@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>读书会人格测试 · 你是哪种角色？</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #FDF6EC;
+    --card: #FFFFFF;
+    --text: #2C2C2C;
+    --sub: #7A7A7A;
+    --accent: #D4845A;
+    --accent2: #E8A87C;
+    --accent-light: #F5E6D8;
+    --border: #E8D5C4;
+    --tag-bg: #FAF0E6;
+    --shadow: rgba(180, 120, 60, 0.12);
+  }
+
+  body {
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+
+  /* 进度条 */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.5s ease;
+    z-index: 100;
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* 屏幕容器 */
+  .screen {
+    display: none;
+    width: 100%;
+    max-width: 680px;
+    flex-direction: column;
+    align-items: center;
+    animation: fadeIn 0.4s ease;
+  }
+  .screen.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 封面 */
+  .cover-icon {
+    font-size: 72px;
+    margin-bottom: 20px;
+    line-height: 1;
+  }
+
+  .cover-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+  }
+
+  .cover-subtitle {
+    font-size: 15px;
+    color: var(--sub);
+    text-align: center;
+    margin-bottom: 32px;
+    line-height: 1.7;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 36px;
+  }
+  .tag {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+
+  /* 封面人格展示 */
+  .cover-roles-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sub);
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+  .cover-roles-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 28px;
+  }
+  .cover-role-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+    transition: all 0.2s;
+    cursor: default;
+  }
+  .cover-role-item:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: translateY(-2px);
+  }
+  .cover-role-item .cr-emoji {
+    font-size: 24px;
+    display: block;
+    margin-bottom: 4px;
+    line-height: 1;
+  }
+  .cover-role-item .cr-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  /* 按钮 */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    border: none;
+    padding: 14px 48px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 40px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 16px var(--shadow);
+    letter-spacing: 1px;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(180, 120, 60, 0.3);
+  }
+  .btn-primary:active { transform: translateY(0); }
+
+  /* 题目 */
+  .question-counter {
+    font-size: 13px;
+    color: var(--sub);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+    align-self: flex-start;
+  }
+  .question-text {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.6;
+    margin-bottom: 28px;
+    color: var(--text);
+    align-self: flex-start;
+  }
+  .question-text .scene {
+    font-size: 14px;
+    color: var(--sub);
+    font-weight: 400;
+    display: block;
+    margin-bottom: 10px;
+    padding: 8px 14px;
+    background: var(--tag-bg);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    line-height: 1.5;
+  }
+
+  /* 选项 */
+  .options { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+  .option {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .option:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: translateX(4px);
+  }
+  .option.selected {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+  .option-letter {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--sub);
+    font-size: 13px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .option.selected .option-letter {
+    background: var(--accent);
+    color: white;
+  }
+  .option-text { font-size: 15px; line-height: 1.5; padding-top: 3px; }
+
+  /* 结果 */
+  .result-card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 40px 32px;
+    text-align: center;
+    box-shadow: 0 8px 32px var(--shadow);
+    border: 1px solid var(--border);
+    width: 100%;
+  }
+  .result-type-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 18px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+  }
+  .result-emoji { font-size: 80px; margin-bottom: 16px; line-height: 1; }
+  .result-name {
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .result-sub {
+    font-size: 14px;
+    color: var(--sub);
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+  .result-divider {
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 24px;
+  }
+  .result-desc {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text);
+    text-align: left;
+    margin-bottom: 28px;
+  }
+  .result-desc p { margin-bottom: 12px; }
+  .result-traits {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    justify-content: center; margin-bottom: 28px;
+  }
+  .trait-tag {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: 13px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+  .score-line {
+    font-size: 13px;
+    color: var(--sub);
+    margin-bottom: 20px;
+  }
+  .score-bar-bg {
+    background: #EDE3D8;
+    border-radius: 8px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .score-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    transition: width 1s ease;
+  }
+  .score-label {
+    font-size: 12px;
+    color: var(--sub);
+    margin-bottom: 20px;
+  }
+
+  /* 其他人格 */
+  .others-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--sub);
+    margin: 28px 0 14px;
+    text-align: left;
+  }
+  .other-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+  }
+  .other-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--sub);
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+  .other-item .o-emoji { font-size: 18px; }
+  .other-item .o-name { font-weight: 600; color: var(--text); }
+  .other-item .o-score {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .btn-row { display: flex; gap: 12px; margin-top: 24px; }
+  .btn-secondary {
+    background: white;
+    color: var(--accent);
+    border: 2px solid var(--border);
+    padding: 12px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 40px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- 封面 -->
+<div id="screen-start" class="screen active">
+  <div class="cover-icon">📚</div>
+  <div class="cover-title">读书会人格测试</div>
+  <div class="cover-subtitle">
+    12道情境题 · 测出你是读书会的什么角色<br>
+    据说只有参与过读书会的人才能全部答完 😏
+  </div>
+  <div class="tag-row">
+    <span class="tag">🎯 12种人格</span>
+    <span class="tag">📖 12道情境题</span>
+    <span class="tag">⏱️ 3分钟测完</span>
+    <span class="tag">😂 搞笑版</span>
+  </div>
+
+  <div class="cover-roles-title">— 你是哪种角色？ —</div>
+  <div class="cover-roles-grid" id="cover-roles"></div>
+
+  <button class="btn-primary" onclick="startTest()">开始测试 →</button>
+</div>
+
+<!-- 答题 -->
+<div id="screen-question" class="screen">
+  <div class="question-counter" id="q-counter">第 1 题 / 共 12 题</div>
+  <div class="question-text" id="q-text"></div>
+  <div class="options" id="q-options"></div>
+</div>
+
+<!-- 结果 -->
+<div id="screen-result" class="screen">
+  <div class="result-card">
+    <div class="result-type-tag" id="r-tag"></div>
+    <div class="result-emoji" id="r-emoji"></div>
+    <div class="result-name" id="r-name"></div>
+    <div class="result-sub" id="r-sub"></div>
+    <div class="result-divider"></div>
+    <div class="result-desc" id="r-desc"></div>
+    <div class="result-traits" id="r-traits"></div>
+    <div class="score-line">你的人格匹配度</div>
+    <div class="score-bar-bg"><div class="score-bar" id="score-bar"></div></div>
+    <div class="score-label" id="score-label"></div>
+    <div class="others-title">你的完整人格图谱</div>
+    <div class="other-list" id="other-list"></div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="location.reload()">再测一次 🔄</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 12种人格数据
+const personalities = [
+  {
+    id: '场控担当',
+    emoji: '🎤',
+    name: '场控担当',
+    subtitle: '读书会的暖气片，氛围组核心成员',
+    desc: `<p>你是读书会的"破冰担当"！每次冷场，第一个站出来的就是你。</p>
+<p>你有一种神奇的能力——能让任何话题都变得有趣，让内向的人也想开口。你自带"话题导流系统"，能把天聊死的人聊活，把聊活的人聊嗨。</p>
+<p>在读书会里，你是那个"大家来了都会先看你"的存在。你的存在本身就是一种安全感——有你在，场子不会冷。</p>`,
+    traits: ['天生的破冰者', '话题导流大师', '社牛本牛', '气氛组组长'],
+    color: '#D4845A'
+  },
+  {
+    id: '金句收割机',
+    emoji: '✨',
+    name: '金句收割机',
+    subtitle: '书里最惊艳的那句话，永远是你先发现的',
+    desc: `<p>你读书有一个特异功能：别人看完一章，你已经摘出了三句值得裱起来的话。</p>
+<p>你对文字有天然的敏感度，那些击中人心的话在你眼里就像黑夜里发光的珍珠，你会忍不住标记、摘抄、分享给所有人。</p>
+<p>你的金句库存量惊人，随便抛一句都能让全场安静三秒然后疯狂点头。你是读书会的"文案外挂"，有你在，朋友圈素材从来不愁。</p>`,
+    traits: ['文字敏感体质', '金句制造机', '朋友圈素材王', '行走的摘抄本'],
+    color: '#C4A25A'
+  },
+  {
+    id: '沉默扫地僧',
+    emoji: '🤫',
+    name: '沉默扫地僧',
+    subtitle: '听得最多，偶尔开口一句封神',
+    desc: `<p>你属于那种"全场都在说，就你一个人安静听"的存在。但这不代表你没想法——恰恰相反。</p>
+<p>你是在场所有人里，思考最深的那一个。你不喜欢说废话，但一旦开口，往往能一句话点醒全场。</p>
+<p>你是读书会的"定海神针"，当大家七嘴八舌说不清楚时，你一句话就把问题说透了。大家事后想起来，往往最记得你说的那句话。</p>`,
+    traits: ['深度思考者', '话少但精', '全场最清醒', '扫地僧本僧'],
+    color: '#8B9BB4'
+  },
+  {
+    id: '杠精觉醒者',
+    emoji: '⚡',
+    name: '杠精觉醒者',
+    subtitle: '你不同意，你说出来，而且说得有道理',
+    desc: `<p>别人都在点头的时候，你举起了手。不是为了附和，是为了提出那个"但是——"。</p>
+<p>你有一种难得的勇气：在人人都说好的氛围里，你敢说出"我觉得这里有问题"。你不是在找茬，你是在认真思考。</p>
+<p>你是读书会的"逻辑检验器"，有你在场，没人能靠漂亮话蒙混过关。你的杠不是抬杠，是思辨的另一种名字。</p>`,
+    traits: ['思辨能力者', '不盲从', '逻辑战士', '清醒的少数派'],
+    color: '#9B7BB8'
+  },
+  {
+    id: '气氛组吉祥物',
+    emoji: '😂',
+    name: '气氛组吉祥物',
+    subtitle: '读书会的笑声担当，欢乐制造机',
+    desc: `<p>你是那种一开口大家就想笑的类型。不是刻意的搞笑，而是自带一种让人放松的气场。</p>
+<p>你可能记不住书里的全部细节，但你一定能记住那些让你笑出声的段落，然后让全场一起笑。</p>
+<p>你是读书会的"快乐供应商"，有你在，大家不会觉得读书是一件严肃的事。你证明了：有趣和深刻，是可以兼得的。</p>`,
+    traits: ['幽默体质', '破防专家', '快乐制造机', '笑声制造者'],
+    color: '#E8A87C'
+  },
+  {
+    id: '灵魂追问者',
+    emoji: '🧠',
+    name: '灵魂追问者',
+    subtitle: '你总是能把话题往深里挖，往透了聊',
+    desc: `<p>"为什么呢？""然后呢？""这让我想到……"——你的口头禅是追问，而你的追问，往往能把话题带到全新的高度。</p>
+<p>你有一种刨根问底的精神，不满足于表面答案。你想知道的是：这个作者为什么这么想？这本书和我的生活有什么关系？</p>
+<p>你是读书会的"认知升级引擎"，有你在场，读书会才从"聊书"变成"聊人生"——而这才是读书真正的意义。</p>`,
+    traits: ['追问体质', '深度挖掘者', '认知升级引擎', '哲学脑'],
+    color: '#7B9EB8'
+  },
+  {
+    id: '代入共情型',
+    emoji: '💕',
+    name: '代入共情型',
+    subtitle: '"这不就是我吗！"是你的口头禅',
+    desc: `<p>别人读的是别人的故事，你读的是自己的故事。看到书里的人物，你总是能快速代入——"我懂这种感觉"。</p>
+<p>你的共情能力超强，能把书里的情感翻译成生活里的例子，让所有人都听得懂、接得住。</p>
+<p>你是读书会的"情感翻译器"，有你在，那些抽象的道理就变成了活生生的经历。你证明了：最好的理解，来自共情而非分析。</p>`,
+    traits: ['高共情体质', '情感翻译器', '生活连接大师', '人味儿最浓'],
+    color: '#C27BA0'
+  },
+  {
+    id: '思维导图狂人',
+    emoji: '📝',
+    name: '思维导图狂人',
+    subtitle: '记笔记记得比谁都认真，结构画得比谁都清晰',
+    desc: `<p>读书会结束，别人忘了一半，你已经整理出了一份完整的章节脉络图。</p>
+<p>你对结构有天然的执念，讨厌模糊，喜欢清晰。你会记下每一个有价值的观点，然后找到它们之间的联系。</p>
+<p>你是读书会的"知识建筑师"，有你在，大家就知道这本书到底讲了什么、之间的关系是什么。你的笔记，是全场最有价值的参考资料。</p>`,
+    traits: ['结构控', '笔记狂魔', '知识建筑师', '信息整理专家'],
+    color: '#6B8E9B'
+  },
+  {
+    id: '推荐官',
+    emoji: '📚',
+    name: '推荐官',
+    subtitle: '读一本推荐十本，认识你就是认识一座图书馆',
+    desc: `<p>你是那种"读完一本书，就想推荐给全世界"的人。每读一本，你的推荐清单就多一条。</p>
+<p>你有发现好东西的眼光，知道什么书适合什么人。当别人问"这本书怎么样"的时候，你的回答永远比豆瓣评分有用。</p>
+<p>你是读书会的"种草机器"，有你在，大家的待读书单就永远列不完。你的推荐，有时候比作者自己的宣传还有说服力。</p>`,
+    traits: ['种草能力者', '私人书单王', '推荐有眼光', '行走的图书馆'],
+    color: '#7BA08B'
+  },
+  {
+    id: '混子型参与者',
+    emoji: '🐟',
+    name: '混子型参与者',
+    subtitle: '来了就是参与，书没读完也来了',
+    desc: `<p>坦白说，你可能是全场最松弛的那个。书没读完？没关系，来了就是参与！</p>
+<p>你有一种难得的松弛感——不卷、不焦虑、不卷KPI也不卷发言顺序。你来，是因为你想来，不是因为你必须来。</p>
+<p>你是读书会的"氧气制造者"，有你在，大家就不会觉得这是一个有压力的地方。你证明了：存在本身，就是最好的参与。</p>`,
+    traits: ['松弛感满分', '来就是胜利', '不卷体质', '氧气本氧'],
+    color: '#A0A07B'
+  },
+  {
+    id: '旁观者清',
+    emoji: '👀',
+    name: '旁观者清',
+    subtitle: '全场最清醒的那个，看透一切但不急于表态',
+    desc: `<p>你有一个独特的视角：你是"在场的旁观者"。你会认真听，但你不急于表态。</p>
+<p>你看问题有一种跳出来的清醒，能看到别人看不到的角度，也能看到大家讨论中遗漏的点。</p>
+<p>你是读书会的"第三方视角"，有你在，讨论就不容易陷入集体盲区。你的沉默不是没想法，是在等那个最准确的开口时机。</p>`,
+    traits: ['冷静观察者', '第三方视角', '看得最清醒', '大智若愚'],
+    color: '#8B8B8B'
+  },
+  {
+    id: '实践行动派',
+    emoji: '🚀',
+    name: '实践行动派',
+    subtitle: '读书是为了用，读完就开始行动',
+    desc: `<p>别人还在讨论"这本书讲了什么"，你已经在想"我能做什么"了。</p>
+<p>你对知识有一种天然的转化欲：读到一个方法，就想马上试试；读到一个观点，就想对照自己的生活。</p>
+<p>你是读书会的"行动催化剂"，有你在，读书会就不只是纸上谈兵。你证明了：知识最大的价值，是改变行动。</p>`,
+    traits: ['行动力爆表', '知识转化器', '知行合一', '效率本率'],
+    color: '#8B6BB8'
+  }
+];
+
+// 12道题目
+const questions = [
+  {
+    text: '读书会刚开始，气氛有点冷，大家都在等。你会怎么做？',
+    options: [
+      { text: '主动开口，打破沉默，带起第一个话题', types: ['场控担当', '气氛组吉祥物'] },
+      { text: '分享一句书里特别精彩的原话，让大家兴奋起来', types: ['金句收割机', '推荐官'] },
+      { text: '安静等着，心里在整理待会要说的话', types: ['沉默扫地僧', '旁观者清'] },
+      { text: '抛出一个问题，引导大家开口', types: ['灵魂追问者', '场控担当'] }
+    ]
+  },
+  {
+    text: '有人分享了一个书里的观点，你突然想到了完全不同的视角，你会：',
+    options: [
+      { text: '直接说出来：但是我觉得这里有个问题……', types: ['杠精觉醒者', '场控担当'] },
+      { text: '先听完大家的讨论，找个合适的时机温和地补充', types: ['代入共情型', '旁观者清'] },
+      { text: '默默记下来，整理成自己的思考框架', types: ['思维导图狂人', '沉默扫地僧'] },
+      { text: '追问一句：为什么作者会这么想呢？', types: ['灵魂追问者', '金句收割机'] }
+    ]
+  },
+  {
+    text: '有人发言特别长，绕了一大圈还没说到重点，你会：',
+    options: [
+      { text: '礼貌打断，把话题拉回来', types: ['场控担当', '旁观者清'] },
+      { text: '努力找到对方说的有价值的点，然后接上去', types: ['代入共情型', '推荐官'] },
+      { text: '安静听着，事后整理出他说的核心观点是什么', types: ['沉默扫地僧', '思维导图狂人'] },
+      { text: '插一句：这个话题让我想到书里另一个有意思的点……', types: ['气氛组吉祥物', '实践行动派'] }
+    ]
+  },
+  {
+    text: '大家都在热烈讨论一个话题，你突然发现话题跑偏了，偏离了书本身，你会：',
+    options: [
+      { text: '温和地把话题拉回来：刚才那个点挺有意思的，书里怎么说的来着？', types: ['场控担当', '灵魂追问者'] },
+      { text: '先让大家聊完，觉得跑偏也是一种收获', types: ['旁观者清', '气氛组吉祥物'] },
+      { text: '记下来跑偏的点，觉得这些延伸也很有价值', types: ['代入共情型', '金句收割机'] },
+      { text: '保持沉默，继续观察', types: ['沉默扫地僧', '旁观者清'] }
+    ]
+  },
+  {
+    text: '读到书里一句特别击中你的话，你会：',
+    options: [
+      { text: '立刻念出来：这句话太绝了！大家听——', types: ['金句收割机', '气氛组吉祥物'] },
+      { text: '分享自己的类似经历：读到这句我特别有感触，因为……', types: ['代入共情型', '实践行动派'] },
+      { text: '记录下来，思考它在书里的逻辑位置', types: ['思维导图狂人', '沉默扫地僧'] },
+      { text: '追问一句：这句话的上下文是什么？作者为什么这么说？', types: ['灵魂追问者', '杠精觉醒者'] }
+    ]
+  },
+  {
+    text: '有人分享了一个个人故事，故事很长，和书的关联度一般，你会：',
+    options: [
+      { text: '认真听完，努力找到和书里内容的连接点', types: ['代入共情型', '旁观者清'] },
+      { text: '找个机会把话题导回书里，但语气很温和', types: ['场控担当', '灵魂追问者'] },
+      { text: '安静听着，个人故事有时比书更真实', types: ['沉默扫地僧', '气氛组吉祥物'] },
+      { text: '引导深入：所以这个经历对你来说意味着什么？', types: ['灵魂追问者', '代入共情型'] }
+    ]
+  },
+  {
+    text: '当你读完一本书，你最想做的事情是什么？',
+    options: [
+      { text: '把这本书推荐给朋友，列一份专属推荐语', types: ['推荐官', '金句收割机'] },
+      { text: '找机会把书里的方法用一用，实践一下', types: ['实践行动派', '代入共情型'] },
+      { text: '整理一份读书笔记，把核心观点结构化', types: ['思维导图狂人', '沉默扫地僧'] },
+      { text: '发一条朋友圈，配上金句和读后感', types: ['金句收割机', '气氛组吉祥物'] }
+    ]
+  },
+  {
+    text: '轮到你分享读后感，但你今天状态一般，没准备太多，你会：',
+    options: [
+      { text: '现场发挥，想起哪说哪，反正真实最重要', types: ['气氛组吉祥物', '代入共情型'] },
+      { text: '就说一句话，但这句话是你想了很久的', types: ['沉默扫地僧', '金句收割机'] },
+      { text: '直接说：今天状态一般，但有个点我印象很深……', types: ['旁观者清', '场控担当'] },
+      { text: '表示歉意，然后把话题抛给下一个人', types: ['混子型参与者', '旁观者清'] }
+    ]
+  },
+  {
+    text: '大家都在热烈讨论，你突然想到了书里另一个很相关的话题，你会：',
+    options: [
+      { text: '直接抛出来：书里还有一个点我特别想聊……', types: ['场控担当', '推荐官'] },
+      { text: '先记下来，等这轮讨论完再说', types: ['思维导图狂人', '沉默扫地僧'] },
+      { text: '试着把那个话题自然地接进当前的讨论里', types: ['灵魂追问者', '代入共情型'] },
+      { text: '先不说了，让当前的话题聊透', types: ['旁观者清', '混子型参与者'] }
+    ]
+  },
+  {
+    text: '你觉得读书会最大的价值是什么？',
+    options: [
+      { text: '和一个真实的人讨论，比自己读有意思多了', types: ['场控担当', '代入共情型'] },
+      { text: '看到同一本书的完全不同视角，被打开认知', types: ['灵魂追问者', '旁观者清'] },
+      { text: '听别人分享书单，又多了一堆待读清单', types: ['推荐官', '金句收割机'] },
+      { text: '整理自己的思考，和志同道合的人在一起', types: ['思维导图狂人', '沉默扫地僧'] }
+    ]
+  },
+  {
+    text: '一本书读了一半实在读不下去，你会怎么处理？',
+    options: [
+      { text: '硬着头皮读完整，读完才有发言权', types: ['思维导图狂人', '场控担当'] },
+      { text: '先放着，等有感觉了再读，不急', types: ['混子型参与者', '旁观者清'] },
+      { text: '上网看看别人的解读，帮助自己理解', types: ['推荐官', '代入共情型'] },
+      { text: '承认读不下去，和大家聊聊卡在哪里', types: ['杠精觉醒者', '灵魂追问者'] }
+    ]
+  },
+  {
+    text: '读书会结束后，你通常会做什么？',
+    options: [
+      { text: '给朋友发消息分享今天听到的好书或好观点', types: ['推荐官', '金句收割机'] },
+      { text: '整理今天的笔记，把新的思考补进去', types: ['思维导图狂人', '沉默扫地僧'] },
+      { text: '回想今天的讨论，把最触动自己的点沉淀下来', types: ['代入共情型', '实践行动派'] },
+      { text: '就结束了，轻松自在，不带走一片云彩', types: ['气氛组吉祥物', '混子型参与者'] }
+    ]
+  }
+];
+
+// 封面展示12人格
+(function renderCoverRoles() {
+  const grid = document.getElementById('cover-roles');
+  if (!grid) return;
+  let html = '';
+  personalities.forEach(p => {
+    html += `
+      <div class="cover-role-item">
+        <span class="cr-emoji">${p.emoji}</span>
+        <span class="cr-name">${p.name}</span>
+      </div>`;
+  });
+  grid.innerHTML = html;
+})();
+
+let currentQ = 0;
+let scores = {};
+personalities.forEach(p => scores[p.id] = 0);
+
+function startTest() {
+  document.getElementById('screen-start').classList.remove('active');
+  document.getElementById('screen-question').classList.add('active');
+  currentQ = 0;
+  personalities.forEach(p => scores[p.id] = 0);
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = questions[currentQ];
+  document.getElementById('q-counter').textContent = `第 ${currentQ + 1} 题 / 共 ${questions.length} 题`;
+  document.getElementById('progress-bar').style.width = ((currentQ + 1) / questions.length * 100) + '%';
+
+  let html = `<span class="scene">情境 ${currentQ + 1}</span>${q.text}`;
+  document.getElementById('q-text').innerHTML = html;
+
+  const letters = ['A', 'B', 'C', 'D'];
+  let optHtml = '';
+  q.options.forEach((opt, i) => {
+    optHtml += `
+      <div class="option" onclick="selectOption(${i})">
+        <div class="option-letter">${letters[i]}</div>
+        <div class="option-text">${opt.text}</div>
+      </div>`;
+  });
+  document.getElementById('q-options').innerHTML = optHtml;
+}
+
+function selectOption(idx) {
+  // 取消其他选中
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  document.querySelectorAll('.option')[idx].classList.add('selected');
+
+  // 计分
+  const types = questions[currentQ].options[idx].types;
+  types.forEach(t => scores[t] += 1);
+
+  setTimeout(() => {
+    currentQ++;
+    if (currentQ < questions.length) {
+      showQuestion();
+    } else {
+      showResult();
+    }
+  }, 350);
+}
+
+function showResult() {
+  document.getElementById('screen-question').classList.remove('active');
+  document.getElementById('screen-result').classList.add('active');
+  document.getElementById('progress-bar').style.width = '100%';
+
+  // 找最高分
+  let maxScore = 0, topType = null;
+  const sorted = [];
+  personalities.forEach(p => {
+    sorted.push({ id: p.id, score: scores[p.id] });
+  });
+  sorted.sort((a, b) => b.score - a.score);
+
+  const result = personalities.find(p => p.id === sorted[0].id);
+  const topScore = sorted[0].score;
+  const maxPossible = questions.length * 2; // 每题最多2分
+  const pct = Math.round(topScore / maxPossible * 100);
+
+  document.getElementById('r-tag').textContent = '你的读书会人格';
+  document.getElementById('r-emoji').textContent = result.emoji;
+  document.getElementById('r-name').textContent = result.name;
+  document.getElementById('r-sub').textContent = result.subtitle;
+  document.getElementById('r-desc').innerHTML = result.desc;
+
+  let traitsHtml = '';
+  result.traits.forEach(t => traitsHtml += `<span class="trait-tag">${t}</span>`);
+  document.getElementById('r-traits').innerHTML = traitsHtml;
+
+  document.getElementById('score-label').textContent =
+    `${topScore} / ${maxPossible} 分（匹配度 ${pct}%）`;
+
+  setTimeout(() => {
+    document.getElementById('score-bar').style.width = pct + '%';
+  }, 300);
+
+  // 其他人格
+  let othersHtml = '';
+  sorted.slice(0, 6).forEach((item, i) => {
+    const p = personalities.find(pp => pp.id === item.id);
+    const subPct = Math.round(item.score / maxPossible * 100);
+    othersHtml += `
+      <div class="other-item">
+        <span class="o-emoji">${p.emoji}</span>
+        <span class="o-name">${p.name}</span>
+        <span class="o-score">${subPct}%</span>
+      </div>`;
+  });
+  document.getElementById('other-list').innerHTML = othersHtml;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今天你读了吗？- 群活跃版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+        
+        h1 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ffd700, #ff6b6b, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+        
+        .subtitle { color: #a0a0a0; font-size: 1em; margin-bottom: 30px; text-align: center; }
+        
+        .scratch-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 600px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            width: 170px;
+            height: 200px;
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(255,215,0,0.3); }
+        
+        .card-back {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 50%, #ffd700 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+        }
+        
+        .card-front {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .card-front.revealed { opacity: 1; }
+        .card-front .emoji { font-size: 2.5em; margin-bottom: 10px; }
+        .card-front .text { font-size: 0.85em; line-height: 1.4; max-height: 100px; overflow: hidden; word-break: break-word; }
+        
+        .card-front.funny { background: linear-gradient(135deg, #ff6b6b, #feca57); color: #333; }
+        .card-front.encourage { background: linear-gradient(135deg, #4ecdc4, #44a08d); }
+        .card-front.mock { background: linear-gradient(135deg, #a8edea, #fed6e3); color: #333; }
+        .card-front.reward { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .card-front.challenge { background: linear-gradient(135deg, #667eea, #764ba2); }
+        
+        .card.scratched .card-back { display: none; }
+        .card.scratched .card-front { opacity: 1; }
+        
+        .btn-reset {
+            background: linear-gradient(135deg, #ffd700, #ff8c00);
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 30px;
+            cursor: pointer;
+            color: #1a1a2e;
+            font-weight: bold;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 5px 20px rgba(255,215,0,0.3);
+        }
+        
+        .btn-reset:hover { transform: scale(1.05); box-shadow: 0 8px 30px rgba(255,215,0,0.5); }
+        
+        .result-popup {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .result-popup.show { display: flex; }
+        
+        .result-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #ffd700;
+            border-radius: 25px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            animation: popIn 0.5s ease;
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .result-emoji { font-size: 4em; margin-bottom: 20px; }
+        .result-title { font-size: 1.5em; color: #ffd700; margin-bottom: 15px; }
+        .result-text { font-size: 1.1em; color: #ccc; line-height: 1.8; margin-bottom: 25px; white-space: pre-line; }
+        
+        .result-close {
+            background: transparent;
+            border: 2px solid #ffd700;
+            color: #ffd700;
+            padding: 10px 30px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .result-close:hover { background: #ffd700; color: #1a1a2e; }
+        
+        .stats {
+            position: fixed;
+            top: 20px; right: 20px;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+        
+        .counter { color: #ffd700; }
+        
+        @media (max-width: 600px) {
+            .scratch-cards { grid-template-columns: repeat(2, 1fr); }
+            .card { width: 100%; height: 180px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="stats">已刮：<span class="counter" id="counter">0</span> / 6</div>
+    
+    <h1>📚 今天你读了吗？</h1>
+    <p class="subtitle">读书flag不倒，刮到就是赚到</p>
+    
+    <div class="scratch-cards" id="cards"></div>
+    
+    <button class="btn-reset" onclick="resetAll()">🔄 再来一轮</button>
+    
+    <div class="result-popup" id="popup">
+        <div class="result-content">
+            <div class="result-emoji" id="popup-emoji">🎉</div>
+            <div class="result-title" id="popup-title">恭喜刮到</div>
+            <div class="result-text" id="popup-text">内容</div>
+            <button class="result-close" onclick="closePopup()">知道了</button>
+        </div>
+    </div>
+    
+    <script>
+        // 搞笑督促系列 - 纯快乐版
+        const cardPool = [
+            // ===== 灵魂拷问 =====
+            { type: 'funny', emoji: '👀', title: '👀 灵魂拷问', text: '今天的书读了吗？\n群里的显眼包们', label: '灵魂拷问' },
+            { type: 'funny', emoji: '🤔', title: '🤔 灵魂拷问', text: '别人都读了，你呢？\n就差你一个了', label: '灵魂拷问' },
+            { type: 'funny', emoji: '😱', title: '😱 灵魂拷问', text: '书买回来是摆设吗？\n起来读！', label: '灵魂拷问' },
+            { type: 'funny', emoji: '😴', title: '😴 灵魂拷问', text: '书还没读，觉还睡得着吗？\n失眠警告！', label: '灵魂拷问' },
+            { type: 'funny', emoji: '🎯', title: '🎯 灵魂拷问', text: '读书不积极\n思想有问题', label: '灵魂拷问' },
+            { type: 'funny', emoji: '🐔', title: '🐔 今日打卡', text: '又一个卷王诞生了！\n今天你读���吗��', label: '今日打卡' },
+            
+            // ===== 搞笑鼓励 =====
+            { type: 'encourage', emoji: '💪', title: '💪 加油打气', text: '今天的你\n比昨天更博学了吗？', label: '加油打气' },
+            { type: 'encourage', emoji: '🌟', title: '🌟 加油打气', text: '群里的flag就靠你了\n读完来群里吱一声', label: '加油打气' },
+            { type: 'encourage', emoji: '🔥', title: '🔥 加油打气', text: '书读完\n牛吹起来才香', label: '加油打气' },
+            { type: 'encourage', emoji: '⭐', title: '⭐ 加油打气', text: '恭喜你发现隐藏任务\n去读书', label: '加油打气' },
+            { type: 'encourage', emoji: '🎉', title: '🎉 加油打气', text: '读完这章\n明天吹牛有素材', label: '加油打气' },
+            { type: 'encourage', emoji: '👏', title: '👏 加油打气', text: '别人都在进步\n你却还在划水', label: '加油打气' },
+            
+            // ===== 嘲讽拉满 =====
+            { type: 'mock', emoji: '😏', title: '😏 年度嘲讽', text: '群里最后一个没打卡的\n哦是你啊', label: '年度嘲讽' },
+            { type: 'mock', emoji: '🤡', title: '🤡 年度嘲讽', text: '书读百遍\n其义自见——\n但你得先读一遍', label: '年度嘲讽' },
+            { type: 'mock', emoji: '😂', title: '😂 年度嘲讽', text: '别人读书我刷手机\n主打一个陪伴', label: '年度嘲讽' },
+            { type: 'mock', emoji: '💀', title: '💀 年度嘲讽', text: '今日看书be like:\n马冬梅\n马什么梅？', label: '年度嘲讽' },
+            
+            // ===== 奖励诱惑 =====
+            { type: 'reward', emoji: '🎁', title: '🎁 今日奖励', text: '读完书来找我\n请你喝奶茶（假的）', label: '今日奖励' },
+            { type: 'reward', emoji: '🧧', title: '🧧 今日奖励', text: '打卡了就是群宠\n荣誉感拉满', label: '今日奖励' },
+            { type: 'reward', emoji: '🏆', title: '🏆 今日奖励', text: '今日读书人\n明天人上人', label: '今日奖励' },
+            { type: 'reward', emoji: '💎', title: '💎 今日奖励', text: '群里的文化人\n就是你！', label: '今日奖励' },
+            
+            // ===== 挑战任务 =====
+            { type: 'challenge', emoji: '⚡', title: '⚡ 今日挑战', text: '读完了来群里喊一声\n让所有人知道', label: '今日挑战' },
+            { type: 'challenge', emoji: '🎳', title: '🎳 今日挑战', text: '把这句话发到群里\n「我今天读书了」', label: '今日挑战' },
+            { type: 'challenge', emoji: '🎭', title: '🎭 今日挑战', text: '读完后\n在群里分享一句你最喜欢的', label: '今日挑战' },
+            { type: 'challenge', emoji: '🎯', title: '🎯 今日挑战', text: '今天读完别走\n明天继续来', label: '今日挑战' },
+        ];
+        
+        let cards = [];
+        let scratchedCount = 0;
+        
+        function shuffle(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+        
+        function createCards() {
+            const container = document.getElementById('cards');
+            container.innerHTML = '';
+            cards = shuffle(cardPool).slice(0, 6);
+            
+            cards.forEach((card, index) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                cardEl.dataset.index = index;
+                cardEl.onclick = () => scratchCard(cardEl, card);
+                
+                cardEl.innerHTML = `
+                    <div class="card-back">💫</div>
+                    <div class="card-front ${card.type}">
+                        <div class="emoji">${card.emoji}</div>
+                        <div class="text">${card.text}</div>
+                    </div>
+                `;
+                
+                container.appendChild(cardEl);
+            });
+        }
+        
+        function scratchCard(cardEl, card) {
+            if (cardEl.classList.contains('scratched')) return;
+            cardEl.classList.add('scratched');
+            scratchedCount++;
+            document.getElementById('counter').textContent = scratchedCount;
+            setTimeout(() => showPopup(card), 300);
+        }
+        
+        function showPopup(card) {
+            document.getElementById('popup-emoji').textContent = card.emoji;
+            document.getElementById('popup-title').textContent = card.title;
+            document.getElementById('popup-text').textContent = card.text;
+            document.getElementById('popup').classList.add('show');
+        }
+        
+        function closePopup() {
+            document.getElementById('popup').classList.remove('show');
+        }
+        
+        function resetAll() {
+            scratchedCount = 0;
+            document.getElementById('counter').textContent = '0';
+            createCards();
+        }
+        
+        createCards();
+        document.getElementById('popup').addEventListener('click', (e) => {
+            if (e.target.id === 'popup') closePopup();
+        });
+    </script>
+</body>
+</html>
